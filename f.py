@@ -1,5 +1,6 @@
 
 import curses
+import os
 import subprocess as s
 
 mmask = curses.ALL_MOUSE_EVENTS
@@ -25,9 +26,11 @@ class Controller:
     def __init__(self):
         pass
 
-    def add(self, element):
-        self.elements.append(element)
-        screen.addstr(self.c, 0, element.name)
+    def add(self, name):
+        e = Element(name, 0, self.c, len(name), 0)
+        self.elements.append(e)
+        print(name)
+        screen.addstr(self.c, 0, name)
         self.c += 1
     
     def check(self, x, y):
@@ -35,6 +38,7 @@ class Controller:
             if x in el.field[0] and y in el.field[1]:
                 return el 
         return None
+
     def clear(self):
         self.c = 0
         self.elements = []
@@ -46,13 +50,12 @@ def cmd(arg):
 
 def show(c):
     screen.clear()
-    if c.dir == "":
-        folders = cmd("ls")
-    else:
-        folders = cmd(["ls", c.dir])
-    for i, el in enumerate(folders):
-        e = Element(el, 0, i, len(el), 0)
-        c.add(e)
+    if c.dir != "":
+        os.chdir(c.dir)
+    folders = cmd(["ls", "-a"])
+
+    for el in folders:
+        c.add(el)
 
     screen.refresh()
     whait(c)
@@ -66,8 +69,8 @@ def whait(c):
             _, mx, my, _, _ = curses.getmouse()
             y, x = screen.getyx()
             el = c.check(mx, my)
-            if el != None:
-               c.dir += (el.name + "/")
+            if el != None and os.path.isdir(el.name):
+               c.dir = el.name
                c.clear()
                show(c)
             screen.refresh()
