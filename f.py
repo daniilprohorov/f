@@ -28,7 +28,7 @@ def folder(name):
 
 kek = [" 1*** ", " 2*** ", " 3*** ", " 4*** "]
 
-def createGrid(folderLst, screen):
+def createGrid(folderLst, screen, sideSpace):
     _, w = screen.getmaxyx() 
     h = 16
     oneFolder = folderLst[0]
@@ -47,10 +47,15 @@ def createGrid(folderLst, screen):
             for f in lineFolders:
                 fLines[i] += (f[i]) 
                 
-
         for i, line in enumerate(fLines):
-            out = ('{:^' + str(w) + '}').format(line)
-            screen.addstr(hc*nHeight + i + spacer, 0, out)
+            if(len(line) < nW):
+                out = ('{:<' + str(w) + '}').format(line)
+                screen.addstr(hc*nHeight + i + spacer, sideSpace, out)
+                screen.addstr(hc*nHeight + i + spacer, sideSpace, '@')
+            else:
+                out = ('{:^' + str(w) + '}').format(line)
+                screen.addstr(hc*nHeight + i + spacer, sideSpace, out)
+                screen.addstr(hc*nHeight + i + spacer, sideSpace, '#')
 
         spacer += 1
         hc += 1
@@ -81,9 +86,14 @@ class Controller:
     def collision(self):
         space = 0
         oneEl = self.elements[0]
-        sideSpace = (self.width % oneEl.width)//2
         nH = self.height // oneEl.height
         nW = self.width // oneEl.width
+        sideSpace = 0
+        if nW >= len(self.elements):
+            sideSpace = (self.width - oneEl.width * len(self.elements)) // 2
+
+        else:
+            sideSpace = (self.width % (oneEl.width * nW)) // 2
         
         h = 0
         for c in range(0, len(self.elements), nW):
@@ -92,8 +102,8 @@ class Controller:
             for w, el in enumerate(line):
                 el.x = sideSpace + w*el.width
                 el.y = h*el.height + space
+                self.screen.addstr(el.y, el.x, "&")
 
-            space += 1
             h += 1
                 
 
@@ -102,10 +112,12 @@ class Controller:
             fieldY = { j for j in range(el.y, el.y+el.height+1)}
             el.field = (fieldX, fieldY)
 
+        return sideSpace
+
 
     
-    def print(self):
-        createGrid( [folder(el.name) for el in self.elements], self.screen)
+    def print(self, sideSpace):
+        createGrid( [folder(el.name) for el in self.elements], self.screen, sideSpace)
     
     def check(self, x, y):
         for el in self.elements:
@@ -130,8 +142,8 @@ def show(c):
 
     for el in folders:
         c.add(el)
-        c.print()
-        c.collision()
+        sideSpace = c.collision()
+        c.print(sideSpace)
     c.screen.refresh()
     whait(c)
 
