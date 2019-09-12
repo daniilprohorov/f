@@ -152,9 +152,9 @@ def whait(c):
 
 def main():
     c = Controller()
-#    try:
-    show(c)
-#    except Exception as e:
-#        exit(c.curses)
-#        print(e)
+    try:
+        show(c)
+    except Exception as e:
+        exit(c.curses)
+        print(e)
 main()
