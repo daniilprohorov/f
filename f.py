@@ -35,7 +35,6 @@ def createGrid(folderLst, screen, sideSpace):
     nWidth = max([len(el) for el in oneFolder])
     nHeight = len(oneFolder) 
     nW = w // nWidth 
-    #nH = h // nHeight 
     
     hc = 0
     spacer = 0
@@ -48,14 +47,12 @@ def createGrid(folderLst, screen, sideSpace):
                 fLines[i] += (f[i]) 
                 
         for i, line in enumerate(fLines):
-            if(len(line) < nW):
+            if(len(lineFolders) < nW):
                 out = ('{:<' + str(w) + '}').format(line)
                 screen.addstr(hc*nHeight + i + spacer, sideSpace, out)
-                screen.addstr(hc*nHeight + i + spacer, sideSpace, '@')
             else:
                 out = ('{:^' + str(w) + '}').format(line)
-                screen.addstr(hc*nHeight + i + spacer, sideSpace, out)
-                screen.addstr(hc*nHeight + i + spacer, sideSpace, '#')
+                screen.addstr(hc*nHeight + i + spacer, 0, out)
 
         spacer += 1
         hc += 1
@@ -164,9 +161,9 @@ def whait(c):
 
 def main():
     c = Controller()
-    try:
-        show(c)
-    except Exception as e:
-        exit(c.curses)
-        print(e)
+#    try:
+    show(c)
+#    except Exception as e:
+#        exit(c.curses)
+#        print(e)
 main()
