@@ -25,39 +25,6 @@ def folder(name):
     lst = [f1,f2]+[fs+('{:^'+str(w)+'}').format(name[w*i:w*(i+1)])+fs for i in range(h-1)]+[f3] 
     return lst
     
-
-kek = [" 1*** ", " 2*** ", " 3*** ", " 4*** "]
-
-def createGrid(folderLst, screen, sideSpace):
-    _, w = screen.getmaxyx() 
-    h = 16
-    oneFolder = folderLst[0]
-    nWidth = max([len(el) for el in oneFolder])
-    nHeight = len(oneFolder) 
-    nW = w // nWidth 
-    
-    hc = 0
-    spacer = 0
-    for c in range(0, len(folderLst)+1, nW):
-        lineFolders = folderLst[c:c+nW]
-        fLines = []
-        for i in range(nHeight):
-            fLines.append('')
-            for f in lineFolders:
-                fLines[i] += (f[i]) 
-                
-        for i, line in enumerate(fLines):
-            if(len(lineFolders) < nW):
-                out = ('{:<' + str(w) + '}').format(line)
-                screen.addstr(hc*nHeight + i + spacer, sideSpace, out)
-            else:
-                out = ('{:^' + str(w) + '}').format(line)
-                screen.addstr(hc*nHeight + i + spacer, 0, out)
-
-        spacer += 1
-        hc += 1
-
-
 class Element:
     def __init__(self, name):
         self.name = name
@@ -65,6 +32,8 @@ class Element:
         self.height = 10 
         self.x = 0
         self.y = 0
+
+
 
 class Controller:
     def __init__(self):
@@ -77,48 +46,38 @@ class Controller:
     def add(self, name):
         e = Element(name)
         self.elements.append(e)
-        print(name)
         self.c += 1
 
-    def collision(self):
-        space = 0
-        oneEl = self.elements[0]
-        nH = self.height // oneEl.height
-        nW = self.width // oneEl.width
-        sideSpace = 0
-        if nW >= len(self.elements):
-            sideSpace = (self.width - oneEl.width * len(self.elements)) // 2
-
-        else:
-            sideSpace = (self.width % (oneEl.width * nW)) // 2
-        
-        h = 0
-        for c in range(0, len(self.elements), nW):
-            line = self.elements[c:c+nW]
-            
-            for w, el in enumerate(line):
-                el.x = sideSpace + w*el.width
-                el.y = h*el.height + space
-                self.screen.addstr(el.y, el.x, "&")
-
-            h += 1
-                
-
-        for el in self.elements:
-            fieldX = { i for i in range(el.x, el.x+el.width+1)}
-            fieldY = { j for j in range(el.y, el.y+el.height+1)}
-            el.field = (fieldX, fieldY)
-
-        return sideSpace
-
-
     
-    def print(self, sideSpace):
-        createGrid( [folder(el.name) for el in self.elements], self.screen, sideSpace)
-    
+    def print(self):
+
+        screenW = self.width
+        folderW = self.elements[0].width
+        folderH = self.elements[0].height
+        nW      = screenW // folderW 
+        sideSpace = screenW % folderW 
+        els = self.elements
+        elCount = len(els)
+        sideSpaceL = sideSpace // 2
+        y = 0
+
+        for i in range(0, elCount, nW):
+            localY = 0
+            for c, el in enumerate(els[i: i + nW]):
+                localY = 0
+                el.y = y                    
+                el.x = sideSpaceL + c*folderW
+                for line in folder(el.name):
+                    self.screen.addstr(el.y+localY, el.x, line)
+                    localY += 1
+            y += localY + 1
+
     def check(self, x, y):
+        self.screen.addstr( 25, 0, str(x) + " " + str(y))
         for el in self.elements:
-            if x in el.field[0] and y in el.field[1]:
+            xLim = el.x + el.width
+            yLim = el.y + el.height
+            if (el.x <= x <= xLim and el.y <= y <= yLim):
                 return el 
         return None
 
@@ -132,6 +91,7 @@ def cmd(arg):
     return ss 
 
 def show(c):
+    c.clear()
     c.screen.clear()
     if c.dir != "":
         os.chdir(c.dir)
@@ -139,8 +99,7 @@ def show(c):
 
     for el in folders:
         c.add(el)
-        sideSpace = c.collision()
-        c.print(sideSpace)
+        c.print()
     c.screen.refresh()
     whait(c)
 
@@ -154,7 +113,6 @@ def whait(c):
             el = c.check(mx, my)
             if el != None and os.path.isdir(el.name):
                c.dir = el.name
-               c.clear()
                show(c)
             c.screen.refresh()
     exit(c.curses)
