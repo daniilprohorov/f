@@ -7,6 +7,9 @@ def init():
     screen = curses.initscr()
     curses.curs_set(0)
     screen.keypad(1)
+    screen.scrollok(1)
+    screen.scroll(10)
+    screen.idlok(True)
     curses.mousemask(mmask)
     curses.noecho()
     return (curses, screen)
@@ -38,27 +41,15 @@ class Element:
 class Controller:
     def __init__(self):
         self.curses, self.screen = init()
-        self.screen.bkgd(' ', self.curses.COLOR_BLACK)
         self.height, self.width = self.screen.getmaxyx()
         self.c = 0
         self.elements = []
         self.dir = "" 
 
-        self.pos = 0
-        self.pad = None
-        self.padHeight = 0 
-
-    def padRefresh(self, move):
-        self.pos += move 
-        #  self.pad.refresh(self.pos, 0, 0, 0, self.padHeight, self.width)
-        self.pad.refresh(self.pos, 0, 0, 0, self.height - 1, self.width)
-
-
     def add(self, name):
         e = Element(name)
         self.elements.append(e)
         self.c += 1
-
 
     
     def print(self):
@@ -72,11 +63,7 @@ class Controller:
         elCount = len(els)
         sideSpaceL = sideSpace // 2
         y = 0
-        self.padHeight = ((elCount // nW) + 1)*(folderH + 1)
-        self.pad = self.curses.newpad(self.padHeight, screenW)
-        self.padRefresh(0)
-        #  self.pad = self.curses.newpad(1000, screenW)
-        self.pad.scrollok(True)
+
         for i in range(0, elCount, nW):
             localY = 0
             for c, el in enumerate(els[i: i + nW]):
@@ -84,17 +71,12 @@ class Controller:
                 el.y = y                    
                 el.x = sideSpaceL + c*folderW
                 for line in folder(el.name):
-                    self.pad.addstr(el.y+localY, el.x, line)
-                    #  self.pad.addstr(0, 0, "1")
-                    #  self.pad.addstr(1, 0, "2")
+                    self.screen.addstr(el.y+localY, el.x, line)
                     localY += 1
             y += localY + 1
 
-        self.screen.refresh()
-        self.padRefresh(0)
-
     def check(self, x, y):
-        #  self.screen.addstr( 25, 0, str(x) + " " + str(y))
+        self.screen.addstr( 25, 0, str(x) + " " + str(y))
         for el in self.elements:
             xLim = el.x + el.width
             yLim = el.y + el.height
@@ -105,9 +87,6 @@ class Controller:
     def clear(self):
         self.c = 0
         self.elements = []
-        self.pos = 0
-        self.pad = None
-        self.padHeight = 0 
 
 def cmd(arg):
     ls = s.check_output(arg).decode("utf-8").split('\n')
@@ -123,8 +102,8 @@ def show(c):
 
     for el in folders:
         c.add(el)
-    c.print()
-    #  c.padRefresh(0)
+        c.print()
+    c.screen.refresh()
     whait(c)
 
 
@@ -132,31 +111,13 @@ def whait(c):
     while True:
         event = c.screen.getch() 
         if event == ord("q"): break
-
-        #  c.screen.addstr(2, 0, str(event))
-        #  if event == 409:
-        #      _, mx, my, _, bs = c.curses.getmouse()
-
         if event == c.curses.KEY_MOUSE:
-            _, mx, my, _, bs = c.curses.getmouse()
-
-            #  c.screen.addstr(2, 0, str(bs))
-
-            if bs == c.curses.BUTTON1_CLICKED:
-                el = c.check(mx, my)
-                if el != None and os.path.isdir(el.name):
-                    c.dir = el.name
-
-                    show(c)
-                    c.screen.refresh()
-            elif bs == c.curses.BUTTON4_PRESSED:
-                c.padRefresh(1)
-            elif bs == 2097152:
-                c.padRefresh(-1)
-
-
-            #  elif bs == c.curses.BUTTON_SHIFT:
-            #      c.padRefresh(-1)
+            _, mx, my, _, _ = c.curses.getmouse()
+            el = c.check(mx, my)
+            if el != None and os.path.isdir(el.name):
+               c.dir = el.name
+               show(c)
+            c.screen.refresh()
     exit(c.curses)
 
 def main():
